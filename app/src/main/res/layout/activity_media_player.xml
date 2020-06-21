@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MediaPlayerActivity">
 
     <Button
         android:id="@+id/btnStartService"
@@ -16,5 +16,15 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="HardcodedText" />
+
+    <ImageView
+        android:id="@+id/playPause"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        app:layout_constraintEnd_toEndOf="@+id/btnStartService"
+        app:layout_constraintStart_toStartOf="@+id/btnStartService"
+        app:layout_constraintTop_toBottomOf="@+id/btnStartService"
+        app:srcCompat="@drawable/ic_round_play_arrow_24"
+        tools:ignore="ContentDescription" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
