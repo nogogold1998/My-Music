@@ -97,7 +97,7 @@ class MediaPlayerActivity : AppCompatActivity() {
     }
 
     fun buildTransportControls() {
-        val mediaController = MediaControllerCompat.getMediaController(this)
+        mediaController = MediaControllerCompat.getMediaController(this)
         // grab the view for the play/pause button
         playPause.setOnClickListener {
             // since this is a play/pause button, you'll need to test the current state

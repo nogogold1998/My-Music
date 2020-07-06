@@ -1,26 +1,28 @@
 package com.example.mymusic
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.service.media.MediaBrowserService
 import android.support.v4.media.MediaBrowserCompat
-import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.media.AudioAttributesCompat
+import androidx.media.AudioFocusRequestCompat
+import androidx.media.AudioManagerCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.session.MediaButtonReceiver
-import androidx.media2.player.MediaPlayer
 
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
@@ -31,42 +33,35 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     private val afChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
             AudioManager.AUDIOFOCUS_LOSS, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> player.pause()
-            AudioManager.AUDIOFOCUS_GAIN -> player.
+            AudioManager.AUDIOFOCUS_GAIN -> player.start()
         }
     }
     private lateinit var becomingNoisyReceiver: BecomingNoisyReceiver
-    private lateinit var myPlayerNotification: MediaStyleNotification
+    private var myPlayerNotification: Notification? = null
     private lateinit var mediaSession: MediaSessionCompat
-    private lateinit var service: MediaBrowserService
-    private var player: android.media.MediaPlayer? = null
+    private lateinit var player: android.media.MediaPlayer
     private lateinit var stateBuilder: PlaybackStateCompat.Builder
 
-    private lateinit var audioFocusRequest: AudioFocusRequest
+    private lateinit var audioFocusRequest: AudioFocusRequestCompat
 
     private val am: AudioManager by lazy { baseContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
 
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
         override fun onPlay() {
             // request audio focus for playback, this registers the afChangeListener
-
-            val result = if (Build.VERSION.SDK_INT >= 26) {
-                audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
-                    setOnAudioFocusChangeListener(afChangeListener)
-                    setAudioAttributes(AudioAttributes.Builder().run {
-                        setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        setUsage(AudioAttributes.USAGE_MEDIA)
-                        build()
-                    })
-                    build()
-                }
-                am.requestAudioFocus(audioFocusRequest)
-            } else {
-                am.requestAudioFocus(
-                    afChangeListener,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN
-                )
-            }
+            audioFocusRequest =
+                AudioFocusRequestCompat
+                    .Builder(AudioManagerCompat.AUDIOFOCUS_GAIN)
+                    .setOnAudioFocusChangeListener(afChangeListener)
+                    .setAudioAttributes(
+                        AudioAttributesCompat
+                            .Builder()
+                            .setContentType((AudioAttributesCompat.CONTENT_TYPE_MUSIC))
+                            .setUsage(AudioAttributesCompat.USAGE_MEDIA)
+                            .build()
+                    )
+                    .build()
+            val result = AudioManagerCompat.requestAudioFocus(am, audioFocusRequest)
 
             if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 // start the service
@@ -78,7 +73,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 // register BECOME_NOISY BroadcastReceiver
                 registerReceiver(becomingNoisyReceiver, intentFilter)
                 // put the service in the foreground, post nofitication
-                service.startForeground(id, myPlayerNotification)
+                this@MediaPlaybackService.buildNotification()
             }
             TODO("Build and display the notification when the player starts playing")
             // val controller =
@@ -86,18 +81,17 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
         override fun onStop() {
             // abandon audio focus
-            if (Build.VERSION.SDK_INT >= 26) am.abandonAudioFocusRequest(audioFocusRequest)
-            else am.abandonAudioFocus(afChangeListener)
+            AudioManagerCompat.abandonAudioFocusRequest(am, audioFocusRequest)
             // unregisterReceiver
             unregisterReceiver(becomingNoisyReceiver)
             // stop the service
-            service.stopSelf()
+            this@MediaPlaybackService.stopSelf()
             // set the session inactive todo(and update metadata and state)
             mediaSession.isActive = false
             // stop the player
             player.stop()
             // the the service out of the foreground
-            service.stopForeground(false)
+            this@MediaPlaybackService.stopForeground(false)
         }
 
         override fun onPause() {
@@ -107,7 +101,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             // unregister BECOME_NOISY BroadcastReceiver
             unregisterReceiver(becomingNoisyReceiver)
             // take the service out of the foreground, retain the notification
-            service.stopForeground(false)
+            this@MediaPlaybackService.stopForeground(false)
         }
     }
 
@@ -126,7 +120,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             isActive = true
 
             // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
-            stateBuilder = PlaybackStateCompat.Builder()
+            this@MediaPlaybackService.stateBuilder = PlaybackStateCompat.Builder()
                 .setActions(
                     PlaybackStateCompat.ACTION_PLAY
                         or PlaybackStateCompat.ACTION_PLAY_PAUSE
@@ -137,16 +131,12 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             setCallback(mediaSessionCallback)
 
             // set the session's token so that client activities can communicate with it
-            setSessionToken(sessionToken)
+            this@MediaPlaybackService.sessionToken = sessionToken
         }
 
-        sessionToken = mediaSession.sessionToken
+        player = android.media.MediaPlayer()
 
-        // ****************************
-        player = MediaPlayer(this)
-        val mediaMetaData = MediaMetadataCompat.Builder().build()
-        val state = PlaybackStateCompat.Builder()
-        val callback = object : MediaSessionCompat.Callback() {}
+        createChannel()
     }
 
     override fun onGetRoot(
@@ -156,15 +146,16 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     ): BrowserRoot {
         // (optional) control the level of access for the specified package name
         // you'll need to write your own logic to do this.
-        return if (allowBrowsing(clientPackageName, clientUid)) {
-            // return a root id that clients can use with onLoadChildren() to retrieve
-            // the content hierarchy
-            BrowserRoot(MY_MEDIA_ROOT_ID, null)
-        } else {
-            // clients can connect, but this BrowserRoot is an empty hierachy
-            // so onLoadChildren returns nothing. this disables the ability to browse for content
-            BrowserRoot(MY_EMPTY_MEDIA_ROOT_ID, null)
-        }
+        // return if (allowBrowsing(clientPackageName, clientUid)) {
+        //     // return a root id that clients can use with onLoadChildren() to retrieve
+        //     // the content hierarchy
+        //     BrowserRoot(MY_MEDIA_ROOT_ID, null)
+        // } else {
+        //     // clients can connect, but this BrowserRoot is an empty hierachy
+        //     // so onLoadChildren returns nothing. this disables the ability to browse for content
+        //     BrowserRoot(MY_EMPTY_MEDIA_ROOT_ID, null)
+        // }
+        return BrowserRoot(MY_MEDIA_ROOT_ID, null)
     }
 
     override fun onLoadChildren(
@@ -192,79 +183,118 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         result.sendResult(mediaItems)
     }
 
-    fun buildNotification() {
+    override fun onDestroy() {
+        super.onDestroy()
+        player.release()
+        // player = null
+    }
+
+    private fun createChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ContextCompat.getSystemService(this, NotificationManager::class.java)?.let {
+                val channelId = getString(R.string.media_playback_channel_id)
+                if (it.getNotificationChannel(channelId) == null) {
+                    val channel = NotificationChannel(
+                        channelId,
+                        getString(R.string.media_playback_channel_name),
+                        NotificationManager.IMPORTANCE_HIGH
+                    ).apply { description = getString(R.string.media_playback_channel_description) }
+                    it.createNotificationChannel(channel)
+                }
+            }
+        }
+    }
+
+    private fun buildNotification() {
         // get the session's metadata
         val controller = mediaSession.controller
         val mediaMetaData = controller.metadata
         val description = mediaMetaData.description
+        if (myPlayerNotification == null) {
+            val builder = NotificationCompat.Builder(
+                baseContext,
+                getString(R.string.media_playback_channel_id)
+            ).apply {
+                // add the metadata for the currently playing track
+                setContentTitle(description.title)
+                setContentText(description.subtitle)
+                setSubText(description.description)
+                setLargeIcon(description.iconBitmap)
 
-        val builder = NotificationCompat.Builder(baseContext, MEDIA_CHANNEL_ID).apply {
-            // add the metadata for the currently playing track
-            setContentTitle(description.title)
-            setContentText(description.subtitle)
-            setSubText(description.description)
-            setLargeIcon(description.iconBitmap)
+                // enable launching the player by clicking the notification
+                setContentIntent(controller.sessionActivity)
 
-            // enable launching the player by clicking the notification
-            setContentIntent(controller.sessionActivity)
-
-            // stop the service when the notification is swiped away
-            setDeleteIntent(
-                MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    baseContext,
-                    PlaybackStateCompat.ACTION_STOP
-                )
-            )
-
-            // make the transport controls visible on the lockscreen
-            setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-
-            // add an app icon and set its accent color
-            setSmallIcon(R.drawable.ic_launcher_foreground)
-            color = ContextCompat.getColor(baseContext, R.color.colorPrimaryDark)
-
-            // add a pause button
-            addAction(
-                NotificationCompat.Action(
-                    R.drawable.ic_round_pause_24,
-                    getString(R.string.pause),
+                // stop the service when the notification is swiped away
+                setDeleteIntent(
                     MediaButtonReceiver.buildMediaButtonPendingIntent(
                         baseContext,
-                        PlaybackStateCompat.ACTION_PLAY_PAUSE
+                        PlaybackStateCompat.ACTION_STOP
                     )
                 )
-            )
 
-            // take advantage of mediaStyle features
-            setStyle(
-                androidx.media.app.NotificationCompat.MediaStyle()
-                    .setMediaSession(mediaSession.sessionToken)
-                    .setShowActionsInCompactView(0)
+                // make the transport controls visible on the lockscreen
+                setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
-                    // add a cancel button
-                    .setShowCancelButton(true)
-                    .setCancelButtonIntent(
+                // add an app icon and set its accent color
+                setSmallIcon(R.drawable.ic_launcher_foreground)
+                color = ContextCompat.getColor(baseContext, R.color.colorPrimaryDark)
+
+                addAction(
+                    NotificationCompat.Action(
+                        R.drawable.ic_round_skip_previous,
+                        getString(R.string.skip_previous),
                         MediaButtonReceiver.buildMediaButtonPendingIntent(
                             baseContext,
-                            PlaybackStateCompat.ACTION_STOP
+                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
                         )
                     )
-            )
+                )
+                addAction(
+                    NotificationCompat.Action(
+                        R.drawable.ic_round_skip_pause,
+                        getString(R.string.pause),
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            baseContext,
+                            PlaybackStateCompat.ACTION_PLAY_PAUSE
+                        )
+                    )
+                )
+                addAction(
+                    NotificationCompat.Action(
+                        R.drawable.ic_round_skip_next,
+                        getString(R.string.skip_next),
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            baseContext,
+                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                        )
+                    )
+                )
 
+                // take advantage of mediaStyle features
+                setStyle(
+                    androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.sessionToken)
+                        .setShowActionsInCompactView(1)
+
+                        // add a cancel button
+                        .setShowCancelButton(true)
+                        .setCancelButtonIntent(
+                            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                baseContext,
+                                PlaybackStateCompat.ACTION_STOP
+                            )
+                        )
+                )
+            }
+            myPlayerNotification = builder.build()
         }
         // display the notification and place the service in the foreground
-        startForeground(id, builder.build())
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        player?.release()
-        player = null
+        startForeground(MEDIA_NOTIFICATION_ID, myPlayerNotification)
     }
 
     companion object {
         private const val TAG = "MediaPlaybackService"
-        const val MEDIA_CHANNEL_ID = "mediaChannel"
+        const val MEDIA_NOTIFICATION_ID = 10
     }
 }
 

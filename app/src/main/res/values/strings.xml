@@ -1,5 +1,13 @@
 <resources>
     <string name="app_name">My Music</string>
 
-    <string name="pause">pause</string>
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+    <string name="skip_previous">Previous</string>
+    <string name="skip_next">Next</string>
+
+    <string name="media_playback_channel_id">mediaChannel</string>
+    <string name="media_playback_channel_name">Media playback</string>
+    <string name="media_playback_channel_description">Control media playback</string>
+    <string name="cover_image">Cover image</string>
 </resources>
