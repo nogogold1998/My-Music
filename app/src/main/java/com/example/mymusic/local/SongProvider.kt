@@ -34,7 +34,7 @@ object SongProvider {
                         retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST),
                         retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM),
                         retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                            .toLong()
+                            .toInt()
                     ).apply { coverImage = BitmapFactory.decodeByteArray(art, 0, art.size) }
                     result.add(song)
                 } while (cursor.moveToNext())
@@ -43,7 +43,7 @@ object SongProvider {
         return result
     }
 
-    @Deprecated("cannot get bitmap directly",ReplaceWith("Glide library"))
+    @Deprecated("cannot get bitmap directly", ReplaceWith("Glide library"))
     fun getSongsByContentResolver(context: Context): List<Song> {
         val mediaUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
 
@@ -75,7 +75,7 @@ object SongProvider {
                     val artist = cursor.getString(cursor.getColumnIndex(projection[2]))
                     val album = cursor.getString(cursor.getColumnIndex(projection[3]))
                     val duration = projection.getOrNull(5)?.let {
-                        cursor.getLong(cursor.getColumnIndex(it))
+                        cursor.getInt(cursor.getColumnIndex(it))
                     } ?: 0
                     result.add(Song(id, title, artist, album, duration))
                 } while (cursor.moveToNext())

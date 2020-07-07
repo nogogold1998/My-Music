@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.mymusic.model.Song
 import kotlinx.android.synthetic.main.item_song.view.*
 
-class SongAdapter(private val clickListener: (Song) -> Unit) :
+class SongAdapter(private val clickListener: (Int) -> Unit) :
     ListAdapter<Song, SongAdapter.ViewHolder>(Song.diffUtils) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -21,7 +21,7 @@ class SongAdapter(private val clickListener: (Song) -> Unit) :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val song = getItem(position)
         holder.bind(song)
-        holder.itemView.setOnClickListener { clickListener(song) }
+        holder.itemView.setOnClickListener { clickListener(position) }
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {

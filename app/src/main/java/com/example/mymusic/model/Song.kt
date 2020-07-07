@@ -11,7 +11,7 @@ data class Song(
     val title: String,
     val artist: String,
     val album: String,
-    val duration: Long
+    val duration: Int
 ) {
     var coverImage: Bitmap? = null
 
@@ -19,7 +19,7 @@ data class Song(
         get() = getUriFromId(id)
 
     val durationString: String
-        get() = DateUtils.formatElapsedTime(duration / 1000)
+        get() = DateUtils.formatElapsedTime(duration.toLong() / 1000)
 
     companion object {
         fun getUriFromId(mediaId: Long): Uri =
