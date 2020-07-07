@@ -1,20 +1,33 @@
 package com.example.mymusic.model
 
+import android.graphics.Bitmap
 import android.net.Uri
+import android.provider.MediaStore
+import android.text.format.DateUtils
 import androidx.recyclerview.widget.DiffUtil
 
 data class Song(
-    val mediaId: String,
+    val id: Long,
     val title: String,
-    val subtitle: String,
-    val albumArtUri: Uri,
-    val browsable: Boolean,
-    var playbackRes: Int
-){
-    companion object{
-        val diffUtils = object: DiffUtil.ItemCallback<Song>(){
+    val artist: String,
+    val album: String,
+    val duration: Long
+) {
+    var coverImage: Bitmap? = null
+
+    val mediaUri: Uri
+        get() = getUriFromId(id)
+
+    val durationString: String
+        get() = DateUtils.formatElapsedTime(duration / 1000)
+
+    companion object {
+        fun getUriFromId(mediaId: Long): Uri =
+            Uri.parse(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI.toString() + "/" + mediaId)
+
+        val diffUtils = object : DiffUtil.ItemCallback<Song>() {
             override fun areItemsTheSame(oldItem: Song, newItem: Song): Boolean {
-                return oldItem.mediaId == newItem.mediaId
+                return oldItem.id == newItem.id
             }
 
             override fun areContentsTheSame(oldItem: Song, newItem: Song): Boolean {

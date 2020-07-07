@@ -1,4 +1,4 @@
-package com.example.mymusic
+package com.example.mymusic.deprecated
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -23,10 +23,12 @@ import androidx.media.AudioFocusRequestCompat
 import androidx.media.AudioManagerCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.session.MediaButtonReceiver
+import com.example.mymusic.R
 
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
 
+@Deprecated("", level = DeprecationLevel.WARNING /*ERROR*/)
 class MediaPlaybackService : MediaBrowserServiceCompat() {
     private val intentFilter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
 
@@ -115,7 +117,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             }
 
         // create a MediaSessionCompat
-        mediaSession = MediaSessionCompat(this, TAG).apply {
+        mediaSession = MediaSessionCompat(this,
+            TAG
+        ).apply {
             setSessionActivity(sessionActivityPendingIntent)
             isActive = true
 
@@ -237,7 +241,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
                 // add an app icon and set its accent color
                 setSmallIcon(R.drawable.ic_launcher_foreground)
-                color = ContextCompat.getColor(baseContext, R.color.colorPrimaryDark)
+                color = ContextCompat.getColor(baseContext,
+                    R.color.colorPrimaryDark
+                )
 
                 addAction(
                     NotificationCompat.Action(

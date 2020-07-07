@@ -1,4 +1,4 @@
-package com.example.mymusic
+package com.example.mymusic.deprecated
 
 import android.content.ComponentName
 import android.content.ContentResolver
@@ -8,13 +8,16 @@ import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_media_player.*
+import com.example.mymusic.R
+import com.example.mymusic.model.Song
 
+@Deprecated("", level = DeprecationLevel.ERROR)
 class MediaPlayerActivity : AppCompatActivity() {
 
     private lateinit var mediaBrowser: MediaBrowserCompat
@@ -59,8 +62,6 @@ class MediaPlayerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_media_player)
 
-        btnStartService.setOnClickListener {
-        }
         // constructs a MediaBrowserCompat. Pass in the name of your MediaBrowserService
         // and the MediaBrowserCompat.ConnectionCallback that you've defined.
         mediaBrowser = MediaBrowserCompat(
@@ -99,16 +100,6 @@ class MediaPlayerActivity : AppCompatActivity() {
     fun buildTransportControls() {
         mediaController = MediaControllerCompat.getMediaController(this)
         // grab the view for the play/pause button
-        playPause.setOnClickListener {
-            // since this is a play/pause button, you'll need to test the current state
-            // and choose the action accordingly
-            val pbState = mediaController.playbackState.state
-            if (pbState == PlaybackStateCompat.STATE_PLAYING) {
-                mediaController.transportControls.pause()
-            } else {
-                mediaController.transportControls.play()
-            }
-        }
 
         // todo display the initial state
         val metadata = mediaController.metadata
@@ -153,6 +144,35 @@ class MediaPlayerActivity : AppCompatActivity() {
         val mediaPlayer = MediaPlayer().apply {
             setDataSource(applicationContext, contentUri)
         }
+    }
+
+    private fun getSongs(): List<Song> {
+        val mediaUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+
+        val projection = arrayOf(
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.ALBUM_ID,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.ARTIST_ID,
+            MediaStore.Audio.Media.DURATION
+        )
+        val selection = MediaStore.Audio.Media.IS_MUSIC + " != 0"
+
+        var cursor: Cursor? = null
+        try {
+            cursor = contentResolver?.query(
+                mediaUri,
+                projection,
+                selection,
+                null,
+                MediaStore.Audio.Media.TITLE
+            )
+        } finally {
+            cursor?.close()
+        }
+        return emptyList()
     }
 }
 //val pendingIntent: PendingIntent =
