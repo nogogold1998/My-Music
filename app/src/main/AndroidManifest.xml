@@ -4,6 +4,7 @@
     package="com.example.mymusic">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -13,21 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup">
-        <activity android:name=".deprecated.MediaPlayerActivity">
-            <!--            <intent-filter>-->
-            <!--                <action android:name="android.intent.action.MAIN" />-->
-            <!---->
-            <!--                <category android:name="android.intent.category.LAUNCHER" />-->
-            <!--            </intent-filter>-->
-        </activity>
-        <service
-            android:name=".deprecated.MediaPlaybackService"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.media.browse.MediaBrowerService" />
-            </intent-filter>
-        </service>
+
         <activity android:name=".MediaActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -40,6 +27,12 @@
             android:name=".MediaService"
             android:enabled="true"
             android:exported="false" />
+
+        <receiver
+            android:name=".MediaControlReceiver"
+            android:enabled="true"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
     </application>
 
 </manifest>

@@ -10,54 +10,125 @@ import android.media.MediaPlayer
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.media.app.NotificationCompat.MediaStyle
 import com.example.mymusic.model.Song
 
 class MediaService : Service() {
-    private var myPlayerNotification: Notification? = null
+    inner class MediaBinder : Binder() {
+        fun getMediaService(): MediaService = this@MediaService
+    }
 
     private val binder = MediaBinder()
 
-    private val mediaPlayer: MediaPlayer = MediaPlayer()
+    private var player: MediaManager? = null
 
-    private val songList = mutableListOf<Song>()
+    private lateinit var listener: MediaManager.Listener
 
     override fun onBind(intent: Intent): IBinder {
         // mediaPlayer.setDataSource()
         return binder
     }
 
-    inner class MediaBinder : Binder() {
-        fun getMediaService(): MediaService = this@MediaService
-    }
-
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        mediaPlayer.setOnErrorListener { mp, what, extra ->
-            Toast.makeText(baseContext, "Media player failed", Toast.LENGTH_SHORT).show()
-            true
-        }
-        mediaPlayer.setOnCompletionListener {
+        listener = object : MediaManager.Listener {
 
-        }
-        mediaPlayer.setOnPreparedListener {
+            override fun onTick(currentPosition: Int) {
+                val intent = Intent().apply {
+                    action = ACTION_ON_TICK
+                    putExtra(EXTRA_SONG_CURRENT_POSITION, currentPosition)
+                }
+                sendBroadcast(intent)
+            }
 
+            override fun onSongChanged(songId: Long) {
+                val intent = Intent().apply {
+                    action = ACTION_SONG_CHANGE
+                    putExtra(EXTRA_SONG_ID, songId)
+                }
+                sendBroadcast(intent)
+            }
+
+            override fun onPlayPause(isPlay: Boolean) {
+                val song = checkNotNull(player?.currentIndexSong).second
+                val intent = Intent().apply {
+                    action = if (isPlay) ACTION_PLAYBACK_PLAY else ACTION_PLAYBACK_PAUSE
+                }
+                sendBroadcast(intent)
+
+                val notification = buildNotification(song, isPlay)
+                if (isPlay) {
+                    startForeground(NOTIFICATION_PLAYBACK_ID, notification)
+                } else {
+                    ContextCompat.getSystemService(baseContext, NotificationManager::class.java)
+                        ?.run {
+                            notify(NOTIFICATION_PLAYBACK_ID, notification)
+                        }
+                    stopForeground(false)
+                }
+            }
         }
     }
 
-    fun loadMedia(songs: List<Song>) {
-        songList.clear()
-        songList.addAll(songs)
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent != null) {
+            when (intent.action) {
+                ACTION_PLAYBACK_PLAY -> play()
+                ACTION_PLAYBACK_PAUSE -> pause()
+                ACTION_PLAYBACK_NEXT -> next()
+                ACTION_PLAYBACK_PREVIOUS -> previous()
+                ACTION_PLAYBACK_STOP -> stop()
+                else -> {
+                }
+            }
+        }
+        return START_STICKY
     }
 
-    fun playAtPosition(position: Int) {
-        if (position in songList.indices) {
-            mediaPlayer.setDataSource(baseContext, songList[position].mediaUri)
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        player?.release()
+    }
+
+    fun next() {
+        player?.next()
+    }
+
+    fun previous() {
+        player?.previous()
+    }
+
+    fun play() {
+        player?.play()
+    }
+
+    fun pause() {
+        player?.pause()
+    }
+
+    private fun stop() {
+        player?.stop()
+        ContextCompat.getSystemService(this, NotificationManager::class.java)
+            ?.cancel(NOTIFICATION_PLAYBACK_ID)
+        player?.release()
+        stopSelf()
+    }
+
+    fun playSongWithId(id: Long) {
+        player?.playWithId(id)
+    }
+
+    fun seekTo(msec: Int) {
+        player?.seekTo(msec)
+    }
+
+    fun loadPlaylist(list: List<Song>) {
+        player?.unsubscribe(listener)
+        player?.release()
+        player = MediaManager(this, MediaPlayer(), list)
+        player!!.subscribe(listener)
     }
 
     private fun createChannel() {
@@ -68,7 +139,7 @@ class MediaService : Service() {
                     val channel = NotificationChannel(
                         channelId,
                         getString(R.string.media_playback_channel_name),
-                        NotificationManager.IMPORTANCE_HIGH
+                        NotificationManager.IMPORTANCE_DEFAULT
                     ).apply { description = getString(R.string.media_playback_channel_description) }
                     it.createNotificationChannel(channel)
                 }
@@ -76,7 +147,7 @@ class MediaService : Service() {
         }
     }
 
-    private fun buildNotification(song: Song): NotificationCompat.Builder {
+    private fun buildNotification(song: Song, isPlay: Boolean): Notification {
         val builder = NotificationCompat.Builder(
             baseContext,
             getString(R.string.media_playback_channel_id)
@@ -87,8 +158,9 @@ class MediaService : Service() {
             setLargeIcon(song.coverImage)
 
             run {
-                val intent = Intent(baseContext, MediaService::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                val intent = Intent(baseContext, MediaActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 }
                 val pendingIntent = PendingIntent.getActivity(
                     baseContext,
@@ -104,12 +176,6 @@ class MediaService : Service() {
                 R.color.colorPrimaryDark
             )
 
-            setStyle(
-                MediaStyle()
-                    .setShowActionsInCompactView(1)
-                    .setShowCancelButton(true)
-                    .setCancelButtonIntent(buildMediaServicePendingIntent(ACTION_PLAYBACK_STOP))
-            )
 
             addAction(
                 NotificationCompat.Action(
@@ -118,13 +184,23 @@ class MediaService : Service() {
                     buildMediaServicePendingIntent(ACTION_PLAYBACK_PREVIOUS)
                 )
             )
-            addAction(
-                NotificationCompat.Action(
-                    R.drawable.ic_round_skip_pause,
-                    getString(R.string.pause),
-                    buildMediaServicePendingIntent(ACTION_PLAYBACK_PAUSE)
+            if (isPlay) {
+                addAction(
+                    NotificationCompat.Action(
+                        R.drawable.ic_round_pause,
+                        getString(R.string.pause),
+                        buildMediaServicePendingIntent(ACTION_PLAYBACK_PAUSE)
+                    )
                 )
-            )
+            } else {
+                addAction(
+                    NotificationCompat.Action(
+                        R.drawable.ic_round_play,
+                        getString(R.string.play),
+                        buildMediaServicePendingIntent(ACTION_PLAYBACK_PLAY)
+                    )
+                )
+            }
             addAction(
                 NotificationCompat.Action(
                     R.drawable.ic_round_skip_next,
@@ -132,8 +208,14 @@ class MediaService : Service() {
                     buildMediaServicePendingIntent(ACTION_PLAYBACK_NEXT)
                 )
             )
+            setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setShowActionsInCompactView(1)
+                    .setShowCancelButton(true)
+                    .setCancelButtonIntent(buildMediaServicePendingIntent(ACTION_PLAYBACK_STOP))
+            )
         }
-        return builder
+        return builder.build()
     }
 
     private fun buildMediaServicePendingIntent(action: String) =
@@ -152,11 +234,18 @@ class MediaService : Service() {
 
         const val REQUEST_CODE = 10
 
-        const val ACTION_PLAYBACK_START = "action.playback.start"
+        const val NOTIFICATION_PLAYBACK_ID = 16
+
+        const val ACTION_PLAYBACK_PLAY = "action.playback.play"
         const val ACTION_PLAYBACK_PAUSE = "action.playback.pause"
         const val ACTION_PLAYBACK_STOP = "action.playback.stop"
         const val ACTION_PLAYBACK_NEXT = "action.playback.next"
         const val ACTION_PLAYBACK_PREVIOUS = "action.playback.previous"
-        const val ACTION_PLAYBACK_SEEK = "action.playback.seek"
+
+        const val ACTION_SONG_CHANGE = "action.song.change"
+        const val ACTION_ON_TICK = "action.on.tick"
+
+        const val EXTRA_SONG_CURRENT_POSITION = "extra.song.current.position"
+        const val EXTRA_SONG_ID = "extra.song.current.id"
     }
 }

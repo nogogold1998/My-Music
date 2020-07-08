@@ -19,7 +19,8 @@
         tools:listitem="@layout/item_song" />
 
     <include
+        android:id="@+id/bottom_playback"
         layout="@layout/bottom_playback"
         android:layout_width="match_parent"
-        android:layout_height="100dp" />
+        android:layout_height="120dp" />
 </LinearLayout>

@@ -257,7 +257,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 )
                 addAction(
                     NotificationCompat.Action(
-                        R.drawable.ic_round_skip_pause,
+                        R.drawable.ic_round_pause,
                         getString(R.string.pause),
                         MediaButtonReceiver.buildMediaButtonPendingIntent(
                             baseContext,
