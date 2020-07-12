@@ -4,12 +4,12 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.os.Handler
 import android.util.Log
-import com.example.mymusic.model.Song
+import com.example.mymusic.repo.model.LocalAudio
 
 class MediaManager(
     private val context: Context,
     private val player: MediaPlayer,
-    private val playlist: List<Song>
+    private val playlist: List<LocalAudio>
 ) {
     interface Listener {
         fun onTick(currentPosition: Int)
@@ -29,12 +29,12 @@ class MediaManager(
         private const val COUNTER_DELAY_MILLIS = 500L
     }
 
-    private val lock = Any()
-
     var loopMode = LoopMode.NONE
 
-    var currentIndexSong: Pair<Int, Song>? = null
+    var currentIndexLocalAudio: Pair<Int, LocalAudio>? = null
         private set
+
+    private val lock = Any()
 
     private val listeners = mutableListOf<Listener>()
 
@@ -70,32 +70,32 @@ class MediaManager(
             .takeIf { it in playlist.indices }
             ?.let { index ->
                 val song = playlist[index]
-                currentIndexSong = index to song
+                currentIndexLocalAudio = index to song
                 changeSong(song)
             }
     }
 
     fun next() = synchronized(lock) {
-        if (currentIndexSong != null && playlist.isNotEmpty()) {
-            val nextIndex = ((currentIndexSong?.first ?: -1) + 1) % playlist.size
+        if (currentIndexLocalAudio != null && playlist.isNotEmpty()) {
+            val nextIndex = ((currentIndexLocalAudio?.first ?: -1) + 1) % playlist.size
             val song = playlist[nextIndex]
-            currentIndexSong = nextIndex to song
+            currentIndexLocalAudio = nextIndex to song
             changeSong(song)
         }
     }
 
     fun previous() = synchronized(lock) {
-        if (currentIndexSong != null && playlist.isNotEmpty()) {
-            val previousIndex = ((currentIndexSong?.first ?: 1) - 1 + playlist.size) % playlist.size
+        if (currentIndexLocalAudio != null && playlist.isNotEmpty()) {
+            val previousIndex = ((currentIndexLocalAudio?.first ?: 1) - 1 + playlist.size) % playlist.size
             check(previousIndex in playlist.indices)
             val song = playlist[previousIndex]
-            currentIndexSong = previousIndex to song
+            currentIndexLocalAudio = previousIndex to song
             changeSong(song)
         }
     }
 
     fun play() {
-        if (currentIndexSong != null) {
+        if (currentIndexLocalAudio != null) {
             player.start()
             notifyPausePlay(true)
             handler.post(counter)
@@ -115,7 +115,7 @@ class MediaManager(
 
     fun release() {
         player.release()
-        currentIndexSong = null
+        currentIndexLocalAudio = null
         listeners.clear()
         handler.removeCallbacks(counter)
     }
@@ -132,14 +132,14 @@ class MediaManager(
         listeners.remove(listener)
     }
 
-    private fun changeSong(song: Song){
+    private fun changeSong(localAudio: LocalAudio){
         player.stop()
         player.reset()
-        player.setDataSource(context, song.mediaUri)
+        player.setDataSource(context, localAudio.mediaUri)
         player.prepare()
         play()
-        if (currentIndexSong != null) {
-            listeners.forEach { it.onSongChanged(currentIndexSong!!.second.id) }
+        if (currentIndexLocalAudio != null) {
+            listeners.forEach { it.onSongChanged(currentIndexLocalAudio!!.second.id) }
         }
     }
 

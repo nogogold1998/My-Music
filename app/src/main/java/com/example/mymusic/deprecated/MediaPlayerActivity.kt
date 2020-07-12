@@ -1,5 +1,8 @@
+@file:Suppress("DEPRECATION", "UNUSED_VARIABLE", "RemoveRedundantQualifierName")
+
 package com.example.mymusic.deprecated
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.ContentResolver
 import android.content.ContentUris
@@ -15,7 +18,7 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.appcompat.app.AppCompatActivity
 import com.example.mymusic.R
-import com.example.mymusic.model.Song
+import com.example.mymusic.repo.model.LocalAudio
 
 @Deprecated("", level = DeprecationLevel.ERROR)
 class MediaPlayerActivity : AppCompatActivity() {
@@ -146,7 +149,8 @@ class MediaPlayerActivity : AppCompatActivity() {
         }
     }
 
-    private fun getSongs(): List<Song> {
+    @SuppressLint("InlinedApi")
+    private fun getSongs(): List<LocalAudio> {
         val mediaUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
 
         val projection = arrayOf(

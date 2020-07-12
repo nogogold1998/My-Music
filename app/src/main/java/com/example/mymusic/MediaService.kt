@@ -12,7 +12,8 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.example.mymusic.model.Song
+import com.example.mymusic.repo.model.LocalAudio
+import com.example.mymusic.ui.MediaActivity
 
 class MediaService : Service() {
     inner class MediaBinder : Binder() {
@@ -21,7 +22,7 @@ class MediaService : Service() {
 
     private val binder = MediaBinder()
 
-    private var player: MediaManager? = null
+    private var mediaManager: MediaManager? = null
 
     private lateinit var listener: MediaManager.Listener
 
@@ -52,7 +53,7 @@ class MediaService : Service() {
             }
 
             override fun onPlayPause(isPlay: Boolean) {
-                val song = checkNotNull(player?.currentIndexSong).second
+                val song = checkNotNull(mediaManager?.currentIndexLocalAudio).second
                 val intent = Intent().apply {
                     action = if (isPlay) ACTION_PLAYBACK_PLAY else ACTION_PLAYBACK_PAUSE
                 }
@@ -89,47 +90,50 @@ class MediaService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        player?.release()
+        mediaManager?.release()
+        mediaManager = null
     }
 
     fun next() {
-        player?.next()
+        mediaManager?.next()
     }
 
     fun previous() {
-        player?.previous()
+        mediaManager?.previous()
     }
 
     fun play() {
-        player?.play()
+        mediaManager?.play()
     }
 
     fun pause() {
-        player?.pause()
+        mediaManager?.pause()
     }
 
     private fun stop() {
-        player?.stop()
+        mediaManager?.pause()
         ContextCompat.getSystemService(this, NotificationManager::class.java)
             ?.cancel(NOTIFICATION_PLAYBACK_ID)
-        player?.release()
         stopSelf()
     }
 
     fun playSongWithId(id: Long) {
-        player?.playWithId(id)
+        mediaManager?.playWithId(id)
     }
 
     fun seekTo(msec: Int) {
-        player?.seekTo(msec)
+        mediaManager?.seekTo(msec)
+        mediaManager?.play()
     }
 
-    fun loadPlaylist(list: List<Song>) {
-        player?.unsubscribe(listener)
-        player?.release()
-        player = MediaManager(this, MediaPlayer(), list)
-        player!!.subscribe(listener)
+    fun loadPlaylist(list: List<LocalAudio>) {
+        mediaManager?.unsubscribe(listener)
+        mediaManager?.release()
+        mediaManager = MediaManager(this, MediaPlayer(), list)
+        mediaManager!!.subscribe(listener)
     }
+
+    fun nowPlaying(): LocalAudio? =  mediaManager?.currentIndexLocalAudio?.second
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -147,15 +151,15 @@ class MediaService : Service() {
         }
     }
 
-    private fun buildNotification(song: Song, isPlay: Boolean): Notification {
+    private fun buildNotification(localAudio: LocalAudio, isPlay: Boolean): Notification {
         val builder = NotificationCompat.Builder(
             baseContext,
             getString(R.string.media_playback_channel_id)
         ).apply {
-            setContentTitle(song.title)
-            setContentText(song.artist)
-            setSubText(song.album)
-            setLargeIcon(song.coverImage)
+            setContentTitle(localAudio.title)
+            setContentText(localAudio.artist)
+            setSubText(localAudio.album)
+            setLargeIcon(localAudio.coverImage)
 
             run {
                 val intent = Intent(baseContext, MediaActivity::class.java).apply {

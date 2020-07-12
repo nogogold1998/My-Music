@@ -1,9 +1,9 @@
-package com.example.mymusic.local
+package com.example.mymusic.repo.local
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import junit.framework.Assert.assertEquals
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -12,26 +12,18 @@ import org.junit.runner.RunWith
 class MusicProviderTest {
 
     lateinit var context: Context
+    lateinit var localAudioSource: LocalAudioSource
 
     @Before
     fun setup() {
         context = getApplicationContext<Context>()
+        localAudioSource = LocalAudioSourceImpl()
     }
 
     @Test
     fun getSongsByMediaMetadataRetriever() {
-        val songsList = SongProvider.getSongsByMediaMetadataRetriever(context)
-        songsList.forEach {
-            println(it.toString())
-        }
-        assertEquals(3, songsList.size)
-    }
-    @Test
-    fun getSongsByContentProvider() {
-        val songsList = SongProvider.getSongsByContentResolver(context)
-        songsList.forEach {
-            println(it.toString())
-        }
+        val songsList = localAudioSource.getAllLocalAudio(context)
+
         assertEquals(3, songsList.size)
     }
 }

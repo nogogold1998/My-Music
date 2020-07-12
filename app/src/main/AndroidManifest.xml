@@ -15,7 +15,7 @@
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup">
 
-        <activity android:name=".MediaActivity">
+        <activity android:name=".ui.MediaActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -27,12 +27,6 @@
             android:name=".MediaService"
             android:enabled="true"
             android:exported="false" />
-
-        <receiver
-            android:name=".MediaControlReceiver"
-            android:enabled="true"
-            android:exported="false"
-            tools:ignore="Instantiatable" />
     </application>
 
 </manifest>
