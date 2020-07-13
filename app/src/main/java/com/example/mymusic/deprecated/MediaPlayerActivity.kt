@@ -18,7 +18,7 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.appcompat.app.AppCompatActivity
 import com.example.mymusic.R
-import com.example.mymusic.repo.model.LocalAudio
+import com.example.mymusic.data.model.LocalAudio
 
 @Deprecated("", level = DeprecationLevel.ERROR)
 class MediaPlayerActivity : AppCompatActivity() {

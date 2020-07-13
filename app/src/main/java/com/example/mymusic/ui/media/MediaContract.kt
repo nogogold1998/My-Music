@@ -1,6 +1,6 @@
-package com.example.mymusic.ui
+package com.example.mymusic.ui.media
 
-import com.example.mymusic.repo.model.Audio
+import com.example.mymusic.data.model.Audio
 
 interface MediaContract {
     interface View {

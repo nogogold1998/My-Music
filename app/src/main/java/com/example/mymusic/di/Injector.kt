@@ -1,10 +1,10 @@
-package com.example.mymusic.dj
+package com.example.mymusic.di
 
 import android.content.Context
-import com.example.mymusic.repo.AudioRepository
-import com.example.mymusic.repo.AudioRepositoryImpl
-import com.example.mymusic.repo.local.LocalAudioSourceImpl
-import com.example.mymusic.repo.remote.FakeRemoteAudioSourceImpl
+import com.example.mymusic.data.AudioRepository
+import com.example.mymusic.data.AudioRepositoryImpl
+import com.example.mymusic.data.local.LocalAudioSourceImpl
+import com.example.mymusic.data.remote.FakeRemoteAudioSourceImpl
 
 object Injector {
     fun getAudioRepository(context: Context): AudioRepository {

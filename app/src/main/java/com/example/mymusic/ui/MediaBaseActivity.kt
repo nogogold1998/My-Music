@@ -8,10 +8,10 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import androidx.appcompat.app.AppCompatActivity
-import com.example.mymusic.MediaManager
-import com.example.mymusic.MediaService
+import com.example.mymusic.data.model.LocalAudio
 import com.example.mymusic.receiver.MediaControlReceiver
-import com.example.mymusic.repo.model.LocalAudio
+import com.example.mymusic.service.MediaService
+import com.example.mymusic.util.MediaManager
 
 abstract class MediaBaseActivity : AppCompatActivity(), MediaManager.Listener{
     private var receiver: MediaControlReceiver? = null
@@ -71,6 +71,10 @@ abstract class MediaBaseActivity : AppCompatActivity(), MediaManager.Listener{
     override fun onDestroy() {
         super.onDestroy()
         receiver = null
+    }
+
+    override fun onPlayPause(isPlay: Boolean) {
+        this.isPlay = isPlay
     }
 
     protected abstract fun changeNowPlaying(localAudio: LocalAudio)

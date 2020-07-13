@@ -1,4 +1,4 @@
-package com.example.mymusic.repo.model
+package com.example.mymusic.data.model
 
 import android.graphics.Bitmap
 import android.net.Uri

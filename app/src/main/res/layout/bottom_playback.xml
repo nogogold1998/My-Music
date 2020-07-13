@@ -2,9 +2,11 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/playback_bar"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:layout_height="wrap_content">
+    android:layout_height="120dp"
+    android:visibility="gone"
+    tools:visibility="visible">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_top"
@@ -35,12 +37,12 @@
         app:layout_constraintGuide_end="@dimen/margin_normal" />
 
 
-        <ImageView
-            android:id="@+id/imageCover"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:contentDescription="@string/cover_image"
-            tools:srcCompat="@drawable/ic_launcher_background"/>
+    <ImageView
+        android:id="@+id/imageCover"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/cover_image"
+        tools:srcCompat="@drawable/ic_launcher_background" />
 
     <TextView
         android:id="@+id/textTitle"
@@ -71,7 +73,7 @@
         style="@style/TextAppearance.MaterialComponents.Subtitle2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="0:00"
+        android:text="@string/zero_time"
         app:layout_constraintBottom_toBottomOf="@+id/seekBar"
         app:layout_constraintEnd_toStartOf="@+id/seekBar"
         app:layout_constraintHorizontal_bias="0.5"

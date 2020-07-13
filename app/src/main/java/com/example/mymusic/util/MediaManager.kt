@@ -1,10 +1,10 @@
-package com.example.mymusic
+package com.example.mymusic.util
 
 import android.content.Context
 import android.media.MediaPlayer
 import android.os.Handler
 import android.util.Log
-import com.example.mymusic.repo.model.LocalAudio
+import com.example.mymusic.data.model.LocalAudio
 
 class MediaManager(
     private val context: Context,
@@ -43,7 +43,9 @@ class MediaManager(
     private val counter = object : Runnable {
         override fun run() {
             notifyTimeTick()
-            handler.postDelayed(this, COUNTER_DELAY_MILLIS)
+            handler.postDelayed(this,
+                COUNTER_DELAY_MILLIS
+            )
         }
     }
 
@@ -53,7 +55,8 @@ class MediaManager(
                 LoopMode.NONE -> next()
                 LoopMode.ONCE -> {
                     player.start()
-                    loopMode = LoopMode.NONE
+                    loopMode =
+                        LoopMode.NONE
                 }
                 LoopMode.ALL -> next()
                 LoopMode.THIS_ONE -> player.start()

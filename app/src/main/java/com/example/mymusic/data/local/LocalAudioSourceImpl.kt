@@ -1,10 +1,10 @@
-package com.example.mymusic.repo.local
+package com.example.mymusic.data.local
 
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
-import com.example.mymusic.repo.model.LocalAudio
+import com.example.mymusic.data.model.LocalAudio
 
 class LocalAudioSourceImpl: LocalAudioSource {
     override fun getAllLocalAudio(context: Context): List<LocalAudio> {

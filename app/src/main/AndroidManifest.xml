@@ -14,8 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup">
-        <activity android:name=".ui.nowplaying.NowPlayingActivity"></activity>
-        <activity android:name=".ui.MediaActivity">
+        <activity android:name=".ui.media.MediaActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -23,8 +22,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.nowplaying.NowPlayingActivity"
+            android:exported="false"
+            android:launchMode="singleTop"/>
+
         <service
-            android:name=".MediaService"
+            android:name=".service.MediaService"
             android:enabled="true"
             android:exported="false" />
     </application>

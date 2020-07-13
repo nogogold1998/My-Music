@@ -1,71 +1,43 @@
-package com.example.mymusic.ui
+package com.example.mymusic.ui.media
 
 import android.Manifest
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.IBinder
 import android.text.format.DateUtils
+import android.view.View
 import android.widget.SeekBar
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
-import com.example.mymusic.MediaManager
-import com.example.mymusic.MediaService
 import com.example.mymusic.R
+import com.example.mymusic.data.model.Audio
+import com.example.mymusic.data.model.LocalAudio
 import com.example.mymusic.databinding.ActivityMediaPlayerBinding
-import com.example.mymusic.dj.Injector
-import com.example.mymusic.receiver.MediaControlReceiver
-import com.example.mymusic.repo.model.Audio
-import com.example.mymusic.repo.model.LocalAudio
+import com.example.mymusic.di.Injector
+import com.example.mymusic.ui.MediaBaseActivity
+import com.example.mymusic.ui.nowplaying.NowPlayingActivity
 import jp.wasabeef.glide.transformations.BlurTransformation
 
-class MediaActivity : AppCompatActivity(), MediaManager.Listener, MediaContract.View {
+class MediaActivity : MediaBaseActivity(),
+    MediaContract.View {
     private lateinit var localAudioAdapter: LocalAudioAdapter
     private lateinit var binding: ActivityMediaPlayerBinding
     private lateinit var presenter: MediaPresenter
-
-    private var receiver: MediaControlReceiver? = null
-    private var mediaService: MediaService? = null
-
-    private var mediaServiceBound: Boolean = false
-    private var isPlay: Boolean = false
-
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, service: IBinder) {
-            val binder = service as? MediaService.MediaBinder
-            mediaService = binder?.getMediaService()
-            mediaService?.nowPlaying()?.let {
-                changeNowPlaying(it)
-                isPlay = true
-            }
-            mediaServiceBound = mediaService != null
-        }
-
-        override fun onServiceDisconnected(name: ComponentName) {
-            mediaService = null
-            mediaServiceBound = false
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMediaPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        presenter = MediaPresenter(Injector.getAudioRepository(this), this)
+        presenter = MediaPresenter(
+            Injector.getAudioRepository(this), this
+        )
 
         localAudioAdapter = LocalAudioAdapter {
             mediaService?.loadPlaylist(localAudioAdapter.currentList)
             mediaService?.playSongWithId(it.id)
         }
-
-        receiver = MediaControlReceiver(this)
 
         initView()
     }
@@ -80,7 +52,7 @@ class MediaActivity : AppCompatActivity(), MediaManager.Listener, MediaContract.
             )
         }
 
-        with(bottomPlayback) {
+        with(bottomContainer) {
             buttonPlayPause.setOnClickListener {
                 if (isPlay)
                     mediaService?.pause()
@@ -104,20 +76,14 @@ class MediaActivity : AppCompatActivity(), MediaManager.Listener, MediaContract.
                     mediaService?.seekTo(seekBar.progress)
                 }
             })
+            playbackBar.setOnClickListener {
+                startActivity(Intent(this@MediaActivity, NowPlayingActivity::class.java))
+            }
         }
     }
 
     override fun onStart() {
         super.onStart()
-        val intent = Intent(this, MediaService::class.java)
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-        val filter = IntentFilter().apply {
-            addAction(MediaService.ACTION_ON_TICK)
-            addAction(MediaService.ACTION_PLAYBACK_PLAY)
-            addAction(MediaService.ACTION_PLAYBACK_PAUSE)
-            addAction(MediaService.ACTION_SONG_CHANGE)
-        }
-        registerReceiver(receiver, filter)
 
         if (allPermissionGranted()) {
             presenter.loadAudios()
@@ -127,24 +93,6 @@ class MediaActivity : AppCompatActivity(), MediaManager.Listener, MediaContract.
                 REQUEST_CODE
             )
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        if(isPlay){
-            startService(Intent(this, MediaService::class.java))
-        }
-        if (mediaServiceBound) {
-            // ContextCompat.startForegroundService(this, Intent(this, MediaService::class.java))
-            unbindService(serviceConnection)
-            mediaServiceBound = false
-        }
-        unregisterReceiver(receiver)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        receiver = null
     }
 
     override fun onRequestPermissionsResult(
@@ -164,7 +112,7 @@ class MediaActivity : AppCompatActivity(), MediaManager.Listener, MediaContract.
     }
 
     override fun onTick(currentPosition: Int) {
-        with(binding.bottomPlayback) {
+        with(binding.bottomContainer) {
             textCurrent.text = DateUtils.formatElapsedTime(currentPosition.toLong() / 1000)
             seekBar.progress = currentPosition
             // isPlay = true
@@ -177,13 +125,14 @@ class MediaActivity : AppCompatActivity(), MediaManager.Listener, MediaContract.
         }
     }
 
-    private fun changeNowPlaying(song: LocalAudio) {
-        with(binding.bottomPlayback) {
-            textTitle.text = song.title
-            textArtist.text = song.artist
-            textDuration.text = song.durationString
-            seekBar.max = song.duration
-            Glide.with(imageCover).load(song.coverImage)
+    override fun changeNowPlaying(localAudio: LocalAudio) {
+        with(binding.bottomContainer) {
+            playbackBar.visibility = View.VISIBLE
+            textTitle.text = localAudio.title
+            textArtist.text = localAudio.artist
+            textDuration.text = localAudio.durationString
+            seekBar.max = localAudio.duration
+            Glide.with(imageCover).load(localAudio.coverImage)
                 .apply(RequestOptions.bitmapTransform(BlurTransformation(25, 10)))
                 .centerCrop()
                 .into(imageCover)
@@ -191,10 +140,10 @@ class MediaActivity : AppCompatActivity(), MediaManager.Listener, MediaContract.
     }
 
     override fun onPlayPause(isPlay: Boolean) {
-        binding.bottomPlayback.buttonPlayPause.setImageResource(
+        super.onPlayPause(isPlay)
+        binding.bottomContainer.buttonPlayPause.setImageResource(
             if (isPlay) R.drawable.ic_round_pause else R.drawable.ic_round_play
         )
-        this@MediaActivity.isPlay = isPlay
     }
 
     private fun allPermissionGranted() =

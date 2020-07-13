@@ -1,9 +1,9 @@
-package com.example.mymusic.repo
+package com.example.mymusic.data
 
 import android.content.Context
-import com.example.mymusic.repo.local.LocalAudioSource
-import com.example.mymusic.repo.model.Audio
-import com.example.mymusic.repo.remote.RemoteAudioSource
+import com.example.mymusic.data.local.LocalAudioSource
+import com.example.mymusic.data.model.Audio
+import com.example.mymusic.data.remote.RemoteAudioSource
 
 class AudioRepositoryImpl private constructor(
     private val context: Context,

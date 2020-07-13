@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".ui.MediaActivity">
+    tools:context=".ui.media.MediaActivity">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
@@ -19,8 +19,6 @@
         tools:listitem="@layout/item_song" />
 
     <include
-        android:id="@+id/bottom_playback"
-        layout="@layout/bottom_playback"
-        android:layout_width="match_parent"
-        android:layout_height="120dp" />
+        android:id="@+id/bottom_container"
+        layout="@layout/bottom_playback" />
 </LinearLayout>

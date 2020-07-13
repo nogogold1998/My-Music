@@ -90,6 +90,7 @@
         app:layout_constraintEnd_toStartOf="@+id/textDuration"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/textCurrent"
+        android:layout_marginBottom="@dimen/margin_normal"
         tools:progress="10" />
 
     <TextView

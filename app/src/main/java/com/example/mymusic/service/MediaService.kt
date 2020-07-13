@@ -1,4 +1,4 @@
-package com.example.mymusic
+package com.example.mymusic.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -12,8 +12,10 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.example.mymusic.repo.model.LocalAudio
-import com.example.mymusic.ui.MediaActivity
+import com.example.mymusic.R
+import com.example.mymusic.data.model.LocalAudio
+import com.example.mymusic.ui.nowplaying.NowPlayingActivity
+import com.example.mymusic.util.MediaManager
 
 class MediaService : Service() {
     inner class MediaBinder : Binder() {
@@ -38,7 +40,8 @@ class MediaService : Service() {
 
             override fun onTick(currentPosition: Int) {
                 val intent = Intent().apply {
-                    action = ACTION_ON_TICK
+                    action =
+                        ACTION_ON_TICK
                     putExtra(EXTRA_SONG_CURRENT_POSITION, currentPosition)
                 }
                 sendBroadcast(intent)
@@ -46,7 +49,8 @@ class MediaService : Service() {
 
             override fun onSongChanged(songId: Long) {
                 val intent = Intent().apply {
-                    action = ACTION_SONG_CHANGE
+                    action =
+                        ACTION_SONG_CHANGE
                     putExtra(EXTRA_SONG_ID, songId)
                 }
                 sendBroadcast(intent)
@@ -129,7 +133,8 @@ class MediaService : Service() {
     fun loadPlaylist(list: List<LocalAudio>) {
         mediaManager?.unsubscribe(listener)
         mediaManager?.release()
-        mediaManager = MediaManager(this, MediaPlayer(), list)
+        mediaManager =
+            MediaManager(this, MediaPlayer(), list)
         mediaManager!!.subscribe(listener)
     }
 
@@ -162,7 +167,7 @@ class MediaService : Service() {
             setLargeIcon(localAudio.coverImage)
 
             run {
-                val intent = Intent(baseContext, MediaActivity::class.java).apply {
+                val intent = Intent(baseContext, NowPlayingActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 }

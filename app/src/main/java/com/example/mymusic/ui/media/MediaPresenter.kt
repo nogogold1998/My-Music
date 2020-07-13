@@ -1,6 +1,6 @@
-package com.example.mymusic.ui
+package com.example.mymusic.ui.media
 
-import com.example.mymusic.repo.AudioRepository
+import com.example.mymusic.data.AudioRepository
 
 class MediaPresenter(
     private val audioRepository: AudioRepository,

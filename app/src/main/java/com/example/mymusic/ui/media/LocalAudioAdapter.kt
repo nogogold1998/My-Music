@@ -1,11 +1,11 @@
-package com.example.mymusic.ui
+package com.example.mymusic.ui.media
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mymusic.databinding.ItemSongBinding
-import com.example.mymusic.repo.model.LocalAudio
+import com.example.mymusic.data.model.LocalAudio
 
 class LocalAudioAdapter(private val clickListener: (LocalAudio) -> Unit) :
     ListAdapter<LocalAudio, LocalAudioAdapter.ViewHolder>(LocalAudio.diffUtils) {

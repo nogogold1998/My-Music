@@ -10,4 +10,5 @@
     <string name="media_playback_channel_name">Media playback</string>
     <string name="media_playback_channel_description">Control media playback</string>
     <string name="cover_image">Cover image</string>
+    <string name="zero_time">0:00</string>
 </resources>

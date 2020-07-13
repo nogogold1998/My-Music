@@ -4,8 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.example.mymusic.MediaManager
-import com.example.mymusic.MediaService
+import com.example.mymusic.util.MediaManager
+import com.example.mymusic.service.MediaService
 
 class MediaControlReceiver(private val listener: MediaManager.Listener) :
     BroadcastReceiver() {
