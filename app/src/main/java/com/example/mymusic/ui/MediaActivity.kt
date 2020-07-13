@@ -1,7 +1,6 @@
 package com.example.mymusic.ui
 
 import android.Manifest
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -11,7 +10,6 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
 import android.text.format.DateUtils
-import android.util.Log
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,6 +20,7 @@ import com.example.mymusic.MediaService
 import com.example.mymusic.R
 import com.example.mymusic.databinding.ActivityMediaPlayerBinding
 import com.example.mymusic.dj.Injector
+import com.example.mymusic.receiver.MediaControlReceiver
 import com.example.mymusic.repo.model.Audio
 import com.example.mymusic.repo.model.LocalAudio
 import jp.wasabeef.glide.transformations.BlurTransformation
@@ -208,25 +207,3 @@ class MediaActivity : AppCompatActivity(), MediaManager.Listener, MediaContract.
     }
 }
 
-private class MediaControlReceiver(private val listener: MediaManager.Listener) :
-    BroadcastReceiver() {
-    override fun onReceive(context: Context?, intent: Intent?) {
-        if (intent != null) {
-            when (intent.action) {
-                MediaService.ACTION_SONG_CHANGE ->
-                    intent.getLongExtra(MediaService.EXTRA_SONG_ID, -1)
-                        .takeIf { it != -1L }
-                        ?.let { id -> listener.onSongChanged(id) }
-
-                MediaService.ACTION_PLAYBACK_PAUSE -> listener.onPlayPause(false)
-                MediaService.ACTION_PLAYBACK_PLAY -> listener.onPlayPause(true)
-                MediaService.ACTION_ON_TICK -> {
-                    val position =
-                        intent.getIntExtra(MediaService.EXTRA_SONG_CURRENT_POSITION, 0)
-                    listener.onTick(position)
-                }
-                else -> Log.d("HelperReceiver", "onReceive: unknown action")
-            }
-        }
-    }
-}

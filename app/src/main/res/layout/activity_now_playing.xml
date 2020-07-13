@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:layout_height="wrap_content">
+    tools:context=".ui.nowplaying.NowPlayingActivity">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_top"
@@ -35,23 +35,27 @@
         app:layout_constraintGuide_end="@dimen/margin_normal" />
 
 
-        <ImageView
-            android:id="@+id/imageCover"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:contentDescription="@string/cover_image"
-            tools:srcCompat="@drawable/ic_launcher_background"/>
+    <ImageView
+        android:id="@+id/imageCover"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/cover_image"
+        tools:srcCompat="@drawable/ic_launcher_background" />
 
     <TextView
         android:id="@+id/textTitle"
-        style="@style/TextAppearance.MaterialComponents.Headline6"
+        style="@style/TextAppearance.MaterialComponents.Headline4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:singleLine="true"
         app:layout_constraintBottom_toTopOf="@+id/textArtist"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toTopOf="@id/guideline_top"
+        android:layout_marginTop="@dimen/margin_normal"
         tools:text="Indistinct Chatter" />
 
     <TextView
@@ -59,7 +63,6 @@
         style="@style/TextAppearance.MaterialComponents.Subtitle1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/seekBar"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
@@ -87,7 +90,6 @@
         app:layout_constraintEnd_toStartOf="@+id/textDuration"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/textCurrent"
-        app:layout_constraintTop_toBottomOf="@+id/textArtist"
         tools:progress="10" />
 
     <TextView
@@ -120,7 +122,7 @@
     <ImageButton
         android:id="@+id/buttonPlayPause"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="120dp"
         android:background="#00FFFFFF"
         android:contentDescription="@string/pause"
         android:tint="@color/colorPrimary"
@@ -128,7 +130,6 @@
         app:layout_constraintEnd_toStartOf="@+id/buttonNext"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/buttonPrevious"
-        app:layout_constraintTop_toBottomOf="@+id/seekBar"
         app:srcCompat="@drawable/ic_round_pause" />
 
     <ImageButton
@@ -144,6 +145,5 @@
         app:layout_constraintStart_toEndOf="@+id/buttonPlayPause"
         app:layout_constraintTop_toTopOf="@+id/buttonPlayPause"
         app:srcCompat="@drawable/ic_round_skip_next" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
